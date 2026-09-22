@@ -67,13 +67,18 @@ export function PreviewPanel() {
           <div className="h-4 w-px bg-panel-border" />
 
           {/* Alternador de Disposição de Páginas (Lado a lado / Empilhado) */}
-          <div className="flex rounded-md border border-panel-border p-0.5" title="Disposição das Páginas A4">
+          <div
+            className="flex rounded-md border border-panel-border p-0.5"
+            title="Disposição das Páginas A4"
+          >
             <button
               type="button"
               onClick={() => setLayoutMode("grid")}
               className={cn(
                 "flex items-center gap-1 rounded-sm px-2 py-1 font-sans text-xs font-medium transition-colors",
-                layoutMode === "grid" ? "bg-panel-raised text-accent font-semibold" : "text-panel-muted hover:text-panel-fg",
+                layoutMode === "grid"
+                  ? "bg-panel-raised text-accent font-semibold"
+                  : "text-panel-muted hover:text-panel-fg",
               )}
               title="Lado a lado (Aproveita a largura)"
             >
@@ -85,7 +90,9 @@ export function PreviewPanel() {
               onClick={() => setLayoutMode("stack")}
               className={cn(
                 "flex items-center gap-1 rounded-sm px-2 py-1 font-sans text-xs font-medium transition-colors",
-                layoutMode === "stack" ? "bg-panel-raised text-accent font-semibold" : "text-panel-muted hover:text-panel-fg",
+                layoutMode === "stack"
+                  ? "bg-panel-raised text-accent font-semibold"
+                  : "text-panel-muted hover:text-panel-fg",
               )}
               title="Empilhado em coluna"
             >

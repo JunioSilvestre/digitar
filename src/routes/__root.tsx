@@ -13,7 +13,8 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content: "Escreva o texto de cada capítulo e veja o índice e o manuscrito atualizarem juntos.",
+        content:
+          "Escreva o texto de cada capítulo e veja o índice e o manuscrito atualizarem juntos.",
       },
       { name: "theme-color", content: "#1E2124" },
     ],

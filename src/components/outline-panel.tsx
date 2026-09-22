@@ -41,7 +41,12 @@ function NodeBlock({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   // Identação visual por profundidade
-  const indentClass = depth === 0 ? "" : depth === 1 ? "mt-1 ml-3 border-l border-panel-border pl-2" : "mt-0.5 ml-3 border-l border-panel-border/50 pl-2";
+  const indentClass =
+    depth === 0
+      ? ""
+      : depth === 1
+        ? "mt-1 ml-3 border-l border-panel-border pl-2"
+        : "mt-0.5 ml-3 border-l border-panel-border/50 pl-2";
 
   return (
     <ul className={cn("flex flex-col gap-1", depth > 0 && indentClass)}>
@@ -71,9 +76,7 @@ function NodeBlock({
                     type="button"
                     className="flex size-7 shrink-0 items-center justify-center rounded text-panel-muted hover:text-panel-fg"
                     aria-label={isCollapsed ? "Expandir" : "Recolher"}
-                    onClick={() =>
-                      setCollapsed((c) => ({ ...c, [node.id]: !c[node.id] }))
-                    }
+                    onClick={() => setCollapsed((c) => ({ ...c, [node.id]: !c[node.id] }))}
                   >
                     {isCollapsed ? (
                       <ChevronRight className="size-3.5" />
@@ -300,9 +303,7 @@ export function OutlinePanel() {
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-2">
         {items.length === 0 ? (
           <div className="px-2 py-8 text-center">
-            <p className="font-sans text-sm italic text-panel-muted">
-              Nenhum capítulo ainda.
-            </p>
+            <p className="font-sans text-sm italic text-panel-muted">Nenhum capítulo ainda.</p>
             <p className="mt-1 font-sans text-xs text-panel-muted/70">
               Clique em «+ Capítulo» para começar.
             </p>

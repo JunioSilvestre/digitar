@@ -17,31 +17,37 @@ Editor profissional de livros e manuscritos em formato A4, com diagramação em 
 ## 🚀 Como Executar em Qualquer Sistema Operacional (Windows / macOS / Linux)
 
 ### Pré-requisitos
+
 - **Node.js**: `v18.0.0` ou superior.
 - **npm**: `v9.0.0` ou superior.
 
 ### 1. Clonar o repositório
+
 ```bash
 git clone https://github.com/JunioSilvestre/digitar.git
 cd digitar
 ```
 
 ### 2. Instalar as dependências
+
 ```bash
 npm install
 ```
 
 ### 3. Executar em ambiente de desenvolvimento
+
 ```bash
 npm run dev
 ```
 
 Acesse no navegador:
+
 ```text
 http://localhost:8080
 ```
 
 Se quiser acessar de outro dispositivo na mesma rede local ou via Tailscale:
+
 ```text
 http://<SEU_IP>:8080
 ```

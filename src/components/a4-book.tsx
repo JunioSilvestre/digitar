@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   A4_CONTENT_H_PX,
@@ -22,10 +22,7 @@ import { chapterLabel, flattenNodes, sectionLabel, type TocNode } from "@/lib/to
 
 export function parseFormattedToHtml(text: string): string {
   if (!text) return "";
-  let html = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // Restore allowed HTML formatting tags
   html = html.replace(/&lt;u&gt;/g, "<u>").replace(/&lt;\/u&gt;/g, "</u>");
@@ -47,7 +44,10 @@ export function parseFormattedToHtml(text: string): string {
   );
 
   // Listas com traço/marcador: - item
-  html = html.replace(/^-\s+(.*)$/gm, '<span style="display:block;padding-left:1.2em;text-indent:-1em;">– $1</span>');
+  html = html.replace(
+    /^-\s+(.*)$/gm,
+    '<span style="display:block;padding-left:1.2em;text-indent:-1em;">– $1</span>',
+  );
 
   return html;
 }
@@ -153,11 +153,9 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
   if (item.kind === "toc-title") {
     el.style.cssText += `text-align:center;font-size:20px;font-weight:700;line-height:1.3;margin-bottom:4px;color:#221f1b;letter-spacing:0.01em;`;
     el.textContent = item.title ?? "";
-
   } else if (item.kind === "toc-kicker") {
     el.style.cssText += `text-align:center;font-size:11px;font-style:italic;color:#8a8071;margin-bottom:16px;margin-top:2px;letter-spacing:0.12em;font-family:'Inter',sans-serif;text-transform:uppercase;`;
     el.textContent = "Sumário";
-
   } else if (item.kind === "toc-row") {
     const depth = item.depth ?? 0;
     el.style.cssText += `display:flex;align-items:baseline;gap:4px;margin-top:${depth === 0 ? 10 : depth === 1 ? 5 : 3}px;padding-left:${depth === 0 ? 0 : depth === 1 ? 16 : 32}px;`;
@@ -178,7 +176,6 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
     pg.textContent = item.page ? String(item.page) : "—";
 
     el.append(lab, tit, dots, pg);
-
   } else if (item.kind === "chapter-open") {
     // Página inteira de abertura — medimos apenas o bloco de conteúdo
     el.style.cssText += `text-align:center;padding:${A4_CONTENT_H_PX * 0.3}px 0 0;`;
@@ -189,14 +186,12 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
     tit.style.cssText = `font-size:26px;font-weight:700;line-height:1.25;color:#221f1b;`;
     tit.textContent = item.title ?? "";
     el.append(lab, tit);
-
   } else if (item.kind === "chapter") {
     el.style.cssText += `margin-top:20px;border-top:1px solid #d8cfb8;padding-top:16px;`;
     const lab = document.createElement("div");
     lab.style.cssText = `font-family:'Inter',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#8c2f39;`;
     lab.textContent = item.label ?? "";
     el.appendChild(lab);
-
   } else if (item.kind === "section") {
     el.style.cssText += `margin-top:20px;`;
     const lab = document.createElement("div");
@@ -209,7 +204,6 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
       tit.textContent = item.title;
       el.appendChild(tit);
     }
-
   } else if (item.kind === "subsection") {
     el.style.cssText += `margin-top:14px;`;
     const lab = document.createElement("span");
@@ -221,7 +215,6 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
       tit.textContent = item.title;
       el.append(lab, tit);
     }
-
   } else if (item.kind === "subsubsection") {
     el.style.cssText += `margin-top:10px;`;
     if (item.title) {
@@ -230,43 +223,103 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
       tit.textContent = (item.label ? item.label + " " : "") + item.title;
       el.appendChild(tit);
     }
-
   } else if (item.kind === "ornament") {
     el.style.cssText += `text-align:center;color:#8a8071;margin:12px 0;font-size:13px;letter-spacing:0.4em;`;
     el.textContent = "❧";
-
   } else if (item.kind === "question-block" && item.questionBlock) {
-    el.style.cssText += `margin-top:16px;border:1px solid #d8cfb8;border-radius:4px;background:#f5f0e4;padding:14px;`;
-    const header = document.createElement("div");
-    header.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#8c2f39;margin-bottom:10px;`;
-    header.textContent = "❓ Questão";
+    const qbm = item.questionBlock;
+    el.style.cssText += `margin-top:16px;border:1px solid var(--color-paper-rule);border-radius:4px;background:var(--color-paper-raised);padding:12px;`;
+
+    // Header: ExamType
+    const headerRow = document.createElement("div");
+    headerRow.style.cssText = `display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;`;
+    if (qbm.examType) {
+      const typeBadge = document.createElement("span");
+      typeBadge.style.cssText = `font-family:'Inter',sans-serif;font-size:7.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#8c2f39;`;
+      typeBadge.textContent = qbm.examType;
+      headerRow.appendChild(typeBadge);
+    }
+
+    // Tags
+    const children: Element[] = [headerRow];
+    if (qbm.tags) {
+      const tagsRow = document.createElement("div");
+      tagsRow.style.cssText = `display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;`;
+      qbm.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .forEach((tag) => {
+          const chip = document.createElement("span");
+          chip.style.cssText = `font-family:'Inter',sans-serif;font-size:7px;padding:1px 5px;border-radius:99px;background:#f1f5f9;color:#64748b;`;
+          chip.textContent = tag;
+          tagsRow.appendChild(chip);
+        });
+      children.push(tagsRow);
+    }
+
+    // Enunciado
     const q = document.createElement("div");
     q.style.cssText = `font-size:13px;font-weight:600;line-height:1.5;color:#221f1b;margin-bottom:8px;`;
-    q.textContent = item.questionBlock.question;
-    const ansLabel = document.createElement("div");
-    ansLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#5a7a3a;margin-bottom:4px;`;
-    ansLabel.textContent = "💡 Resposta";
-    const ans = document.createElement("div");
-    ans.style.cssText = `font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#3a5a2a;margin-bottom:10px;`;
-    ans.textContent = item.questionBlock.answer;
-    const expLabel = document.createElement("div");
-    expLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#6a6060;margin-bottom:4px;`;
-    expLabel.textContent = "📖 Explicação";
-    const exp = document.createElement("div");
-    exp.style.cssText = `font-size:12px;line-height:1.55;color:#3a3530;margin-bottom:10px;`;
-    exp.textContent = item.questionBlock.explanation;
-    if (item.questionBlock.commandExample) {
+    q.textContent = qbm.question;
+    children.push(q);
+
+    // Resposta / Correta
+    if (qbm.answer) {
+      const ansLabel = document.createElement("div");
+      ansLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#5a7a3a;margin-bottom:4px;`;
+      ansLabel.textContent = "💡 Alternativa Correta / Resposta";
+      const ans = document.createElement("div");
+      ans.style.cssText = `font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#3a5a2a;margin-bottom:8px;`;
+      ans.textContent = qbm.answer;
+      children.push(ansLabel, ans);
+    }
+
+    // Explicação
+    if (qbm.explanation) {
+      const expLabel = document.createElement("div");
+      expLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#6a6060;margin-bottom:4px;`;
+      expLabel.textContent = "📖 Explicação";
+      const exp = document.createElement("div");
+      exp.style.cssText = `font-size:12px;line-height:1.55;color:#3a3530;margin-bottom:8px;`;
+      exp.textContent = qbm.explanation;
+      children.push(expLabel, exp);
+    }
+
+    // Exemplo de comando
+    if (qbm.commandExample) {
       const cmdLabel = document.createElement("div");
       cmdLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#2a4a6a;margin-bottom:4px;`;
       cmdLabel.textContent = "💻 Exemplo";
       const cmd = document.createElement("pre");
-      cmd.style.cssText = `font-family:'Fira Code','Courier New',monospace;font-size:10.5px;background:#1e2124;color:#d4e0f0;padding:10px 12px;border-radius:3px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;`;
-      cmd.textContent = item.questionBlock.commandExample;
-      el.append(header, q, ansLabel, ans, expLabel, exp, cmdLabel, cmd);
-    } else {
-      el.append(header, q, ansLabel, ans, expLabel, exp);
+      cmd.style.cssText = `font-family:'Fira Code','Courier New',monospace;font-size:10px;background:#1e2124;color:#d4e0f0;padding:8px 10px;border-radius:3px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 8px 0;`;
+      cmd.textContent = qbm.commandExample;
+      children.push(cmdLabel, cmd);
     }
 
+    // Dica
+    if (qbm.hints) {
+      const hintBox = document.createElement("div");
+      hintBox.style.cssText = `background:#fffbea;border:1px solid #f6d860;border-radius:3px;padding:6px 8px;margin-bottom:6px;`;
+      const hintLabel = document.createElement("span");
+      hintLabel.style.cssText = `font-family:'Inter',sans-serif;font-size:7.5px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.1em;margin-right:4px;`;
+      hintLabel.textContent = "💡 Dica";
+      const hintTxt = document.createElement("span");
+      hintTxt.style.cssText = `font-size:11px;color:#451a03;`;
+      hintTxt.textContent = qbm.hints;
+      hintBox.append(hintLabel, hintTxt);
+      children.push(hintBox);
+    }
+
+    // Referência
+    if (qbm.reference) {
+      const refLine = document.createElement("div");
+      refLine.style.cssText = `font-family:'Inter',sans-serif;font-size:8px;color:#8a8071;font-style:italic;margin-top:6px;`;
+      refLine.textContent = "📚 " + qbm.reference;
+      children.push(refLine);
+    }
+
+    el.append(...children);
   } else {
     // Parágrafo — com indentação da primeira linha e justificado
     el.style.cssText += `font-size:14.5px;line-height:1.7;text-align:justify;color:#221f1b;text-indent:1.5em;margin-top:0;hyphens:auto;-webkit-hyphens:auto;word-break:break-word;overflow-wrap:anywhere;`;
@@ -353,7 +406,11 @@ function pack(host: HTMLDivElement, items: FlowItem[], kind: LaidPage["kind"]): 
   return pages.length ? pages : [{ kind, items: [] }];
 }
 
-function layoutBook(host: HTMLDivElement, title: string, items: TocNode[]): {
+function layoutBook(
+  host: HTMLDivElement,
+  title: string,
+  items: TocNode[],
+): {
   pages: LaidPage[];
   pageMap: Record<string, number>;
 } {
@@ -368,7 +425,11 @@ function layoutBook(host: HTMLDivElement, title: string, items: TocNode[]): {
     for (const it of page.items) {
       if (
         it.id &&
-        (it.kind === "chapter-open" || it.kind === "chapter" || it.kind === "section" || it.kind === "subsection" || it.kind === "subsubsection") &&
+        (it.kind === "chapter-open" ||
+          it.kind === "chapter" ||
+          it.kind === "section" ||
+          it.kind === "subsection" ||
+          it.kind === "subsubsection") &&
         pageMap[it.id] == null
       ) {
         pageMap[it.id] = bodyPageNum;
@@ -548,7 +609,8 @@ function FlowView({
       >
         {item.title ? (
           <span className="font-serif text-[13px] font-semibold italic text-ink/80 break-words [word-break:break-word]">
-            {item.label ? `${item.label} ` : ""}{item.title}
+            {item.label ? `${item.label} ` : ""}
+            {item.title}
           </span>
         ) : null}
       </button>
@@ -565,50 +627,93 @@ function FlowView({
   // ── Question Block ─────────────────────────────────────────────────────────
   if (item.kind === "question-block" && item.questionBlock) {
     const qb = item.questionBlock;
+
     return (
       <button
         type="button"
         onClick={() => item.id && onSelect(item.id)}
         className={cn(
-          "mt-4 w-full rounded border border-paper-rule bg-[#f5f0e4] text-left transition-colors hover:border-accent",
+          "mt-4 w-full rounded border border-paper-rule bg-paper-raised text-left transition-colors hover:border-accent",
           selectedId === item.id && "ring-2 ring-accent",
         )}
       >
-        {/* Header */}
-        <div className="border-b border-paper-rule px-3.5 py-2">
-          <span className="font-sans text-[8px] font-bold tracking-[0.18em] text-accent uppercase">
-            ❓ Questão
-          </span>
+        {/* Header: examType */}
+        <div className="border-b border-paper-rule px-3 py-2 flex flex-wrap items-center gap-2">
+          {qb.examType && (
+            <span className="font-sans text-[7.5px] font-bold tracking-[0.16em] text-accent uppercase">
+              {qb.examType}
+            </span>
+          )}
         </div>
-        <div className="px-3.5 py-3 space-y-2.5">
+
+        <div className="px-3.5 py-3 space-y-2">
+          {/* Tags */}
+          {qb.tags && (
+            <div className="flex flex-wrap gap-1">
+              {qb.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .map((tag, i) => (
+                  <span
+                    key={i}
+                    className="font-sans text-[7px] px-1.5 py-px rounded-full bg-slate-100 text-slate-500"
+                  >
+                    {tag}
+                  </span>
+                ))}
+            </div>
+          )}
+
           {/* Enunciado */}
           <p className="font-serif text-[13px] font-semibold leading-snug text-ink">
             {qb.question}
           </p>
-          {/* Resposta */}
-          <div>
-            <div className="font-sans text-[7.5px] font-bold tracking-[0.15em] text-[#5a7a3a] uppercase mb-1">
-              💡 Resposta
+
+          {/* Resposta / Gabarito */}
+          {qb.answer && (
+            <div>
+              <div className="font-sans text-[7.5px] font-bold tracking-[0.15em] text-[#5a7a3a] uppercase mb-1">
+                💡 Alternativa Correta / Resposta
+              </div>
+              <p className="font-sans text-[12px] font-semibold text-[#3a5a2a]">{qb.answer}</p>
             </div>
-            <p className="font-sans text-[12px] font-semibold text-[#3a5a2a]">{qb.answer}</p>
-          </div>
+          )}
           {/* Explicação */}
-          <div>
-            <div className="font-sans text-[7.5px] font-bold tracking-[0.15em] text-ink-muted uppercase mb-1">
-              📖 Explicação
+          {qb.explanation ? (
+            <div>
+              <div className="font-sans text-[7.5px] font-bold tracking-[0.15em] text-ink-muted uppercase mb-1">
+                📖 Explicação
+              </div>
+              <p className="font-serif text-[12px] leading-relaxed text-ink/80">{qb.explanation}</p>
             </div>
-            <p className="font-serif text-[12px] leading-relaxed text-ink/80">{qb.explanation}</p>
-          </div>
+          ) : null}
+
           {/* Exemplo de Comando */}
           {qb.commandExample ? (
             <div>
               <div className="font-sans text-[7.5px] font-bold tracking-[0.15em] text-[#2a4a6a] uppercase mb-1.5">
                 💻 Exemplo & Variações
               </div>
-              <pre className="font-mono text-[10.5px] leading-snug bg-[#1e2124] text-[#d4e0f0] px-3 py-2.5 rounded whitespace-pre-wrap overflow-x-auto">
+              <pre className="font-mono text-[10px] leading-snug bg-[#1e2124] text-[#d4e0f0] px-3 py-2 rounded whitespace-pre-wrap overflow-x-auto">
                 {qb.commandExample}
               </pre>
             </div>
+          ) : null}
+
+          {/* Dica */}
+          {qb.hints ? (
+            <div className="rounded border border-amber-300 bg-amber-50 px-2.5 py-1.5">
+              <span className="font-sans text-[7.5px] font-bold text-amber-800 uppercase tracking-wide mr-1">
+                💡 Dica:
+              </span>
+              <span className="font-sans text-[11px] text-amber-900">{qb.hints}</span>
+            </div>
+          ) : null}
+
+          {/* Referência */}
+          {qb.reference ? (
+            <p className="font-sans text-[8px] italic text-ink-muted mt-1">📚 {qb.reference}</p>
           ) : null}
         </div>
       </button>
@@ -644,6 +749,10 @@ function A4Sheet({
   const paddingRight = isOdd ? A4_MARGIN_OUTER_PX : A4_MARGIN_INNER_PX;
   const isChapterPage = page.kind === "chapter-open";
 
+  // Altura disponível para o conteúdo:
+  // Sem header superior → usamos todo o espaço entre margens menos o fólio
+  const contentH = A4_H_PX - A4_MARGIN_TOP_PX - A4_MARGIN_BOTTOM_PX - A4_FOLIO_PX;
+
   return (
     <article
       className="a4-sheet relative bg-paper text-ink shadow-[0_20px_50px_-16px_rgba(0,0,0,.5)] transition-shadow"
@@ -658,32 +767,12 @@ function A4Sheet({
         position: "relative",
       }}
     >
-      {/* Cabeçalho (running header) — não aparece na abertura de capítulo */}
-      {!isChapterPage ? (
-        <div
-          className="flex items-center justify-between border-b border-paper-rule/50 pb-1 mb-2"
-          style={{ height: A4_HEADER_PX }}
-        >
-          {isOdd ? (
-            <>
-              <span className="font-sans text-[8px] tabular-nums text-ink-muted">{number}</span>
-              <span className="font-sans text-[8px] italic text-ink-muted tracking-[0.06em]">
-                {/* número ímpar: título do capítulo corrente (preenchido dinamicamente) */}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="font-sans text-[8px] italic text-ink-muted tracking-[0.06em]" />
-              <span className="font-sans text-[8px] tabular-nums text-ink-muted">{number}</span>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      {/* Conteúdo principal */}
+      {/* Conteúdo principal — sem header, mais espaço disponível */}
       <div
         style={{
-          height: isChapterPage ? A4_H_PX - A4_MARGIN_TOP_PX - A4_MARGIN_BOTTOM_PX - A4_FOLIO_PX : A4_CONTENT_H_PX,
+          height: isChapterPage
+            ? A4_H_PX - A4_MARGIN_TOP_PX - A4_MARGIN_BOTTOM_PX - A4_FOLIO_PX
+            : contentH,
           overflow: "hidden",
         }}
       >
@@ -698,16 +787,13 @@ function A4Sheet({
         )}
       </div>
 
-      {/* Fólio (número de página no rodapé) — só nas páginas body e toc */}
+      {/* Fólio (número de página no rodapé) */}
       {!isChapterPage ? (
-        <div
-          className="flex items-end justify-center"
-          style={{ height: A4_FOLIO_PX }}
-        >
+        <div className="flex items-end justify-center" style={{ height: A4_FOLIO_PX }}>
           <span className="font-sans text-[9px] tabular-nums text-ink-muted">{number}</span>
         </div>
       ) : (
-        /* Na abertura de capítulo, o fólio fica no canto externo */
+        /* Na abertura de capítulo, o fólio fica no canto externo inferior */
         <div
           className="absolute bottom-4 font-sans text-[9px] tabular-nums text-ink-muted"
           style={{ [isOdd ? "right" : "left"]: paddingRight }}
@@ -748,16 +834,20 @@ export function A4Book({
   const [autoScale, setAutoScale] = useState(0.75);
   const pageMapRef = useRef<string>("");
 
-  useLayoutEffect(() => {
+  // Debounce de 350ms: recalcula o layout A4 só quando o usuário para de digitar
+  useEffect(() => {
     const host = measureRef.current;
     if (!host) return;
-    const { pages: laid, pageMap } = layoutBook(host, title, items);
-    setPages(laid);
-    const key = JSON.stringify(pageMap);
-    if (key !== pageMapRef.current) {
-      pageMapRef.current = key;
-      onPageMap(pageMap);
-    }
+    const id = setTimeout(() => {
+      const { pages: laid, pageMap } = layoutBook(host, title, items);
+      setPages(laid);
+      const key = JSON.stringify(pageMap);
+      if (key !== pageMapRef.current) {
+        pageMapRef.current = key;
+        onPageMap(pageMap);
+      }
+    }, 350);
+    return () => clearTimeout(id);
   }, [title, items, onPageMap]);
 
   useEffect(() => {
@@ -778,7 +868,6 @@ export function A4Book({
     return () => ro.disconnect();
   }, [layoutMode]);
 
-  const shown = mode === "sumario" ? pages.filter((p) => p.kind === "toc") : pages;
   const effectiveScale = customScale !== null ? customScale : autoScale;
 
   return (
@@ -799,12 +888,14 @@ export function A4Book({
           layoutMode === "grid" ? "flex-row flex-wrap justify-center" : "flex-col items-center",
         )}
       >
-        {shown.map((page, i) => {
-          const number = mode === "sumario" ? i + 1 : pages.indexOf(page) + 1;
+        {pages.map((page, i) => {
+          const isHiddenScreen = mode === "sumario" && page.kind !== "toc";
+          const number = pages.indexOf(page) + 1;
           const currentScale = effectiveScale > 0 ? effectiveScale : 0.75;
           return (
             <div
               key={`${page.kind}-${i}`}
+              className={isHiddenScreen ? "hidden print:block" : ""}
               style={{
                 width: A4_W_PX * currentScale,
                 height: A4_H_PX * currentScale,
@@ -819,12 +910,7 @@ export function A4Book({
                   transformOrigin: "top left",
                 }}
               >
-                <A4Sheet
-                  page={page}
-                  number={number}
-                  selectedId={selectedId}
-                  onSelect={onSelect}
-                />
+                <A4Sheet page={page} number={number} selectedId={selectedId} onSelect={onSelect} />
               </div>
             </div>
           );

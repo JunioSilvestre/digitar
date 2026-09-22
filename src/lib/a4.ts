@@ -24,12 +24,12 @@ export type FlowKind =
   | "toc-kicker"
   | "toc-row"
   | "break"
-  | "chapter-open"   // Página dedicada de abertura de capítulo
-  | "chapter"        // Cabeçalho de capítulo dentro de página body
-  | "section"        // Seção (depth=1)
-  | "subsection"     // Subseção (depth=2)
-  | "subsubsection"  // Sub-subseção (depth≥3)
-  | "ornament"       // Ornamento decorativo entre seções
+  | "chapter-open" // Página dedicada de abertura de capítulo
+  | "chapter" // Cabeçalho de capítulo dentro de página body
+  | "section" // Seção (depth=1)
+  | "subsection" // Subseção (depth=2)
+  | "subsubsection" // Sub-subseção (depth≥3)
+  | "ornament" // Ornamento decorativo entre seções
   | "para"
   | "question-block";
 

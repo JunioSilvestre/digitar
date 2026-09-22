@@ -14,11 +14,11 @@
   --color-focus: #2f8fb0;
 
   /* ── Paper & Ink (A4 pages) ─────────────────────────────────────── */
-  --color-paper: #faf6ed;
-  --color-paper-raised: #f2ece0;
-  --color-paper-rule: #d4cbb5;
-  --color-ink: #1e1b17;
-  --color-ink-muted: #7a7265;
+  --color-paper: #ffffff;
+  --color-paper-raised: #f9f9f9;
+  --color-paper-rule: #e5e7eb;
+  --color-ink: #000000;
+  --color-ink-muted: #4b5563;
 
   /* ── Accent (Dark Red — estilo editorial clássico) ──────────────── */
   --color-accent: #8c2f39;
@@ -111,7 +111,7 @@
   }
 
   #print-root {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -134,12 +134,14 @@
 
   /* Remove o scale e sombra das folhas durante impressão */
   #print-root .a4-sheet,
+  #print-root > div,
   #print-root > div > div {
     transform: none !important;
     width: 210mm !important;
     height: 297mm !important;
     box-shadow: none !important;
     border: none !important;
+    margin: 0 !important;
   }
 
   /* Oculta elementos da UI que não devem ir para o PDF */

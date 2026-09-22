@@ -1,8 +1,29 @@
+export type QuestionType = "objetiva" | "dissertativa" | "pratica";
+export type QuestionDifficulty = "facil" | "medio" | "dificil";
+
+export type QuestionAlternatives = {
+  a: string;
+  b: string;
+  c: string;
+  d: string;
+  e: string;
+};
+
 export type QuestionBlock = {
   question: string;
   answer: string;
   explanation: string;
   commandExample: string;
+  /** Tags / tópicos separados por vírgula */
+  tags?: string;
+  /** Fonte / referência bibliográfica */
+  reference?: string;
+  /** Tipo de certificação/prova (Ex: LPIC, CompTIA, etc) */
+  examType?: string;
+  /** Dica(s) sem spoiler — reveladas pelo aluno quando quiser */
+  hints?: string;
+  /** Pegadinhas / pontos de atenção para o professor */
+  traps?: string;
 };
 
 export type TocNode = {
@@ -140,12 +161,7 @@ export function findNode(nodes: TocNode[], id: string): TocNode | null {
 
 export function flattenNodes(nodes: TocNode[]): LocatedNode[] {
   const out: LocatedNode[] = [];
-  const walk = (
-    list: TocNode[],
-    parent: TocNode | null,
-    prefix: number[],
-    depth: number,
-  ) => {
+  const walk = (list: TocNode[], parent: TocNode | null, prefix: number[], depth: number) => {
     list.forEach((node, i) => {
       const path = [...prefix, i + 1];
       out.push({ node, path, depth, parent, siblings: list, index: i });
@@ -243,9 +259,7 @@ export function demoteNode(nodes: TocNode[], id: string): TocNode[] {
     if (idx > 0) {
       const next = [...list];
       next.splice(idx, 1);
-      return next.map((n) =>
-        n.id === prev.id ? { ...n, children: [...n.children, item] } : n,
-      );
+      return next.map((n) => (n.id === prev.id ? { ...n, children: [...n.children, item] } : n));
     }
     return list.map((n) => ({ ...n, children: apply(n.children) }));
   };

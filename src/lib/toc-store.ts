@@ -38,10 +38,16 @@ type TocStore = {
   select: (id: string | null) => void;
   setPreviewMode: (mode: PreviewMode) => void;
   setPageMap: (pageMap: Record<string, number>) => void;
-  patchSelected: (patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>) => void;
-  patchNode: (id: string, patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>) => void;
+  patchSelected: (
+    patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>,
+  ) => void;
+  patchNode: (
+    id: string,
+    patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>,
+  ) => void;
   addChapter: () => void;
   addSubitem: (parentId?: string) => void;
+  addSubSection: (parentId?: string) => void;
   addQuestionBlock: (parentId?: string) => void;
   remove: (id?: string) => void;
   move: (id: string | undefined, dir: -1 | 1) => void;
@@ -195,7 +201,23 @@ export const useTocStore = create<TocStore>((set, get) => ({
       return;
     }
 
-    const actualParent = targetParent ?? (get().items[0]?.id ?? null);
+    const actualParent = targetParent ?? get().items[0]?.id ?? null;
+    const node = createNode({ title: "", body: "" });
+    const items = addChild(get().items, actualParent, node);
+    set({ items, selectedId: node.id });
+    triggerDebouncedPersist(set, get);
+  },
+
+  addSubSection: (parentId) => {
+    const currentSelected = get().selectedId;
+    const parent = parentId ?? currentSelected;
+
+    if (!parent && get().items.length === 0) {
+      get().addChapter();
+      return;
+    }
+
+    const actualParent = parent ?? get().items[0]?.id ?? null;
     const node = createNode({ title: "", body: "" });
     const items = addChild(get().items, actualParent, node);
     set({ items, selectedId: node.id });
@@ -218,7 +240,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
       get().addChapter();
     }
 
-    const actualParent = targetParent ?? (get().items[0]?.id ?? null);
+    const actualParent = targetParent ?? get().items[0]?.id ?? null;
     const defaultQuestion: QuestionBlock = {
       question: "Digite o enunciado da questão ou comando aqui...",
       answer: "Digite a resposta ou comando esperado...",

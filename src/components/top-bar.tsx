@@ -3,15 +3,20 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Download,
   FileText,
   Heading,
+  HelpCircle,
   IndentDecrease,
   IndentIncrease,
   Italic,
   List,
   Loader2,
+  Maximize2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Printer,
   RotateCcw,
@@ -24,7 +29,17 @@ import { cn } from "@/lib/cn";
 import { chapterLabel, findLocated, sectionLabel } from "@/lib/toc";
 import { useTocStore } from "@/lib/toc-store";
 
-export function TopBar() {
+export function TopBar({
+  sidebarOpen,
+  onToggleSidebar,
+  focusMode,
+  onToggleFocus,
+}: {
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
+  focusMode: boolean;
+  onToggleFocus: () => void;
+}) {
   const title = useTocStore((s) => s.title);
   const setTitle = useTocStore((s) => s.setTitle);
   const items = useTocStore((s) => s.items);
@@ -46,7 +61,59 @@ export function TopBar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loc = selectedId ? findLocated(items, selectedId) : null;
-  const label = loc ? (loc.depth === 0 ? chapterLabel(loc.path[0]!) : sectionLabel(loc.path)) : null;
+  const label = loc
+    ? loc.depth === 0
+      ? chapterLabel(loc.path[0]!)
+      : sectionLabel(loc.path)
+    : null;
+
+  const handleToggleQuestionBlock = () => {
+    if (!loc) return;
+    if (loc.depth === 0) {
+      alert(
+        "Questões só podem ser adicionadas em Seções ou Subseções. Adicione uma Seção primeiro.",
+      );
+      return;
+    }
+    if (loc.node.questionBlock) {
+      patchSelected({ questionBlock: undefined });
+    } else {
+      patchSelected({
+        questionBlock: {
+          question: "Digite o enunciado da questão aqui...",
+          answer: "",
+          explanation: "Explique a fundamentação ou conceito técnico aqui...",
+          commandExample: "$ ls -la --sort=time\n# Exemplo em outra situação / cenário",
+        },
+      });
+    }
+  };
+
+  // Breadcrumb: capítulo pai + seção atual
+  const breadcrumb = (() => {
+    if (!loc) return null;
+    if (loc.depth === 0) {
+      return (
+        <span className="font-sans text-[0.72rem] font-bold text-accent">
+          {chapterLabel(loc.path[0]!)}
+        </span>
+      );
+    }
+    const chapterIdx = loc.path[0]!;
+    const chLabel = chapterLabel(chapterIdx);
+    const secLabel = sectionLabel(loc.path);
+    const nodeTitle = loc.node.title.trim();
+    return (
+      <span className="flex items-center gap-1 font-sans text-[0.72rem] text-panel-muted">
+        <span className="font-bold text-accent">{chLabel}</span>
+        <ChevronRight className="size-3 shrink-0 text-panel-muted/60" />
+        <span className="font-semibold text-panel-fg">
+          {secLabel}
+          {nodeTitle ? ` — ${nodeTitle}` : ""}
+        </span>
+      </span>
+    );
+  })();
 
   const applyFormat = (prefix: string, suffix: string = prefix) => {
     const el = document.getElementById("body-editor") as HTMLTextAreaElement | null;
@@ -76,12 +143,28 @@ export function TopBar() {
   };
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-panel-border bg-panel px-4 py-2 text-panel-fg shadow-sm">
-      {/* Esquerda: Logo, Título da Obra e Status de Salvamento */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <BookOpen className="size-5 text-accent" />
-          <span className="font-serif text-base font-bold text-panel-fg">Editor A4</span>
+    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-panel-border bg-panel px-3 py-1.5 text-panel-fg shadow-sm">
+      {/* Esquerda: toggle sidebar + logo + breadcrumb + save status */}
+      <div className="flex items-center gap-2">
+        {/* Toggle sidebar */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="flex size-7 shrink-0 items-center justify-center rounded border border-panel-border text-panel-muted hover:border-accent hover:text-accent"
+          title={sidebarOpen ? "Recolher painel lateral" : "Expandir painel lateral"}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose className="size-4" />
+          ) : (
+            <PanelLeftOpen className="size-4" />
+          )}
+        </button>
+
+        <div className="flex items-center gap-1.5">
+          <BookOpen className="size-4 text-accent" />
+          <span className="hidden font-serif text-sm font-bold text-panel-fg xl:inline">
+            Editor A4
+          </span>
         </div>
 
         <div className="h-4 w-px bg-panel-border" />
@@ -90,29 +173,37 @@ export function TopBar() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título do Livro / Obra..."
-          className="w-44 sm:w-60 rounded-md border border-panel-border bg-panel-raised px-2.5 py-1 font-serif text-sm font-semibold text-panel-fg outline-none placeholder:text-panel-muted focus:border-accent"
+          placeholder="Título do Livro..."
+          className="w-36 sm:w-52 rounded border border-panel-border bg-panel-raised px-2 py-1 font-serif text-sm font-semibold text-panel-fg outline-none placeholder:text-panel-muted focus:border-accent"
         />
 
-        {/* Status de Salvamento em Tempo Real */}
+        {/* Breadcrumb: localização atual */}
+        {breadcrumb && (
+          <>
+            <div className="h-4 w-px bg-panel-border" />
+            <div className="hidden items-center md:flex">{breadcrumb}</div>
+          </>
+        )}
+
+        {/* Status de Salvamento */}
         <div
-          className="flex items-center gap-1.5 rounded-full bg-panel-raised px-2.5 py-0.5 text-[0.68rem] font-medium text-panel-muted border border-panel-border"
-          title="Os dados são salvos continuamente no IndexedDB do navegador"
+          className="flex items-center gap-1 rounded-full bg-panel-raised px-2 py-0.5 text-[0.65rem] font-medium text-panel-muted border border-panel-border"
+          title="Salvo automaticamente no IndexedDB do navegador"
         >
           {saveStatus === "saving" ? (
             <>
               <Loader2 className="size-3 animate-spin text-amber-400" />
-              <span>Salvando...</span>
+              <span>Salvando</span>
             </>
           ) : saveStatus === "error" ? (
             <>
               <span className="size-2 rounded-full bg-red-500" />
-              <span className="text-red-400">Erro ao salvar</span>
+              <span className="text-red-400">Erro</span>
             </>
           ) : (
             <>
               <CheckCircle2 className="size-3 text-emerald-400" />
-              <span>Salvo localmente</span>
+              <span className="hidden sm:inline">Salvo</span>
             </>
           )}
         </div>
@@ -127,18 +218,34 @@ export function TopBar() {
           className="flex items-center gap-1 rounded bg-accent px-2.5 py-1.5 font-sans text-xs font-semibold text-paper shadow hover:bg-accent-hover"
           title="Adicionar Novo Capítulo (Algarismo Romano)"
         >
-          <Plus className="size-3.5" />
-          + Capítulo
+          <Plus className="size-3.5" />+ Capítulo
         </button>
 
         <button
           type="button"
           onClick={() => addSubitem()}
           className="flex items-center gap-1 rounded border border-panel-border bg-panel-raised px-2.5 py-1.5 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
-          title="Adicionar Seção no Capítulo Atual"
+          title="Adicionar Seção"
         >
-          <Plus className="size-3.5" />
-          + Seção
+          <Plus className="size-3.5" />+ Seção
+        </button>
+
+        <button
+          type="button"
+          onClick={() => useTocStore.getState().addSubSection()}
+          className="flex items-center gap-1 rounded border border-panel-border bg-panel-raised px-2.5 py-1.5 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
+          title="Adicionar Subseção (filha do item atual)"
+        >
+          <Plus className="size-3.5" />+ Subseção
+        </button>
+
+        <button
+          type="button"
+          onClick={handleToggleQuestionBlock}
+          className="flex items-center gap-1 rounded border border-panel-border bg-panel-raised px-2.5 py-1.5 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
+          title="Adicionar Bloco de Questão na Seção Atual"
+        >
+          <HelpCircle className="size-3.5" />+ Questão
         </button>
 
         <div className="mx-1 h-4 w-px bg-panel-border" />
@@ -248,15 +355,33 @@ export function TopBar() {
         </button>
       </div>
 
-      {/* Direita: Backup (Exportar/Importar), Modo de Visualização, Imprimir, Reset */}
+      {/* Direita: Modo Foco, Backup, Visualização, Imprimir, Reset */}
       <div className="flex items-center gap-2">
-        {/* Backup: Exportar / Importar JSON */}
+        {/* Modo Foco */}
+        <button
+          type="button"
+          onClick={onToggleFocus}
+          className={cn(
+            "flex items-center gap-1 rounded border px-2 py-1 font-sans text-xs font-medium transition-colors",
+            focusMode
+              ? "border-accent bg-accent/10 text-accent"
+              : "border-panel-border text-panel-muted hover:border-accent hover:text-accent",
+          )}
+          title="Modo Foco — esconde painéis laterais (F11)"
+        >
+          <Maximize2 className="size-3" />
+          <span className="hidden xl:inline">Foco</span>
+        </button>
+
+        <div className="h-4 w-px bg-panel-border" />
+
+        {/* Backup */}
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={exportBackup}
             className="flex items-center gap-1 rounded border border-panel-border bg-panel-raised px-2 py-1 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
-            title="Exportar Backup do Manuscrito (.json)"
+            title="Exportar Backup (.json)"
           >
             <Download className="size-3" />
             <span className="hidden xl:inline">Backup</span>
@@ -266,7 +391,7 @@ export function TopBar() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 rounded border border-panel-border bg-panel-raised px-2 py-1 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
-            title="Importar Arquivo de Backup (.json)"
+            title="Importar Backup (.json)"
           >
             <Upload className="size-3" />
             <span className="hidden xl:inline">Restaurar</span>
@@ -289,7 +414,9 @@ export function TopBar() {
             onClick={() => setPreviewMode("manuscrito")}
             className={cn(
               "flex items-center gap-1 rounded-sm px-2 py-1 font-sans text-xs font-medium",
-              previewMode === "manuscrito" ? "bg-accent text-paper" : "text-panel-muted hover:text-panel-fg",
+              previewMode === "manuscrito"
+                ? "bg-accent text-paper"
+                : "text-panel-muted hover:text-panel-fg",
             )}
           >
             <FileText className="size-3" />
@@ -301,7 +428,9 @@ export function TopBar() {
             onClick={() => setPreviewMode("sumario")}
             className={cn(
               "flex items-center gap-1 rounded-sm px-2 py-1 font-sans text-xs font-medium",
-              previewMode === "sumario" ? "bg-accent text-paper" : "text-panel-muted hover:text-panel-fg",
+              previewMode === "sumario"
+                ? "bg-accent text-paper"
+                : "text-panel-muted hover:text-panel-fg",
             )}
           >
             <List className="size-3" />
@@ -313,7 +442,7 @@ export function TopBar() {
           type="button"
           onClick={() => window.print()}
           className="flex size-7 items-center justify-center rounded border border-panel-border text-panel-muted hover:border-accent hover:text-accent"
-          title="Imprimir / Exportar PDF"
+          title="Imprimir / PDF"
         >
           <Printer className="size-3.5" />
         </button>
@@ -324,7 +453,7 @@ export function TopBar() {
             if (window.confirm("Restaurar o exemplo original?")) reset();
           }}
           className="flex size-7 items-center justify-center rounded border border-panel-border text-panel-muted hover:border-amber-400 hover:text-amber-400"
-          title="Restaurar Exemplo Exclusivo"
+          title="Restaurar Exemplo"
         >
           <RotateCcw className="size-3.5" />
         </button>
