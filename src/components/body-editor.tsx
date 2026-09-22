@@ -3,6 +3,14 @@ import { BookOpen, Code, HelpCircle, Plus, Trash2 } from "lucide-react";
 import { chapterLabel, countWords, findLocated, sectionLabel } from "@/lib/toc";
 import { useTocStore } from "@/lib/toc-store";
 
+/** Rótulo legível do nó conforme profundidade */
+function depthLabel(depth: number): string {
+  if (depth === 0) return "Capítulo";
+  if (depth === 1) return "Seção";
+  if (depth === 2) return "Subseção";
+  return "Sub-subseção";
+}
+
 export function BodyEditor() {
   const items = useTocStore((s) => s.items);
   const selectedId = useTocStore((s) => s.selectedId);
@@ -27,13 +35,16 @@ export function BodyEditor() {
         <BookOpen className="mb-3 size-8 text-ink-muted" strokeWidth={1.5} />
         <p className="max-w-xs font-serif text-lg text-ink">Selecione um item no sumário</p>
         <p className="mt-2 max-w-xs font-sans text-sm text-ink-muted">
-          Escolha um capítulo ou seção no painel da esquerda para editar o título e o texto do manuscrito.
+          Escolha um capítulo ou seção no painel da esquerda para editar o título e o texto do
+          manuscrito.
         </p>
       </section>
     );
   }
 
-  const label = loc.depth === 0 ? chapterLabel(loc.path[0]!) : sectionLabel(loc.path);
+  const depth = loc.depth;
+  const label = depth === 0 ? chapterLabel(loc.path[0]!) : sectionLabel(loc.path);
+  const dLabel = depthLabel(depth);
   const page = pageMap[loc.node.id];
   const words = countWords(loc.node.body);
   const qb = loc.node.questionBlock;
@@ -55,38 +66,46 @@ export function BodyEditor() {
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-paper">
-      {/* Header com tipo de item e título */}
+      {/* Header */}
       <header className="border-b border-paper-rule px-4 py-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="font-sans text-[0.7rem] font-bold tracking-widest text-accent uppercase">
-            {label}
-          </p>
+          {/* Rótulo do nível */}
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-accent/10 px-2 py-0.5 font-sans text-[0.65rem] font-bold tracking-[0.15em] text-accent uppercase">
+              {dLabel}
+            </span>
+            <span className="font-sans text-[0.7rem] font-semibold text-ink-muted tabular-nums">
+              {label}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             {page ? (
               <span className="rounded bg-paper-rule/40 px-2 py-0.5 font-sans text-xs tabular-nums text-ink-muted">
-                Página {page}
+                Pág. {page}
               </span>
             ) : null}
-            {loc.depth > 0 ? (
+            {/* Botão de bloco de questão — apenas para seções/subseções */}
+            {depth > 0 ? (
               <button
                 type="button"
                 onClick={handleToggleQuestionBlock}
                 className="inline-flex items-center gap-1 rounded border border-paper-rule bg-paper-raised/60 px-2 py-0.5 font-sans text-xs font-medium text-ink hover:border-accent hover:text-accent"
-                title={qb ? "Remover Bloco de Questão" : "Converter em Bloco de Questão & Comando"}
+                title={qb ? "Remover Bloco de Questão" : "Adicionar Bloco Questão & Comando"}
               >
                 <HelpCircle className="size-3" />
-                {qb ? "Remover Questão" : "+ Bloco Questão/Comando"}
+                {qb ? "Remover Questão" : "+ Questão"}
               </button>
             ) : null}
           </div>
         </div>
-        {loc.depth === 0 ? (
-          <div className="mt-1 flex items-center justify-between rounded bg-paper-raised/60 px-3 py-1.5 border border-paper-rule/60">
-            <span className="font-serif text-base font-bold text-ink">
-              {label}
-            </span>
-            <span className="font-sans text-[0.7rem] italic text-ink-muted">
-              Identificado exclusivamente por Algarismos Romanos
+
+        {/* Campo de título — capítulo não tem título editável */}
+        {depth === 0 ? (
+          <div className="mt-2 flex items-center gap-3 rounded border border-paper-rule/60 bg-paper-raised/60 px-3 py-2">
+            <span className="font-serif text-base font-bold text-ink">{label}</span>
+            <span className="ml-auto font-sans text-[0.68rem] italic text-ink-muted">
+              Identificado por Algarismo Romano — sem título editável
             </span>
           </div>
         ) : (
@@ -94,13 +113,13 @@ export function BodyEditor() {
             type="text"
             value={loc.node.title}
             onChange={(e) => patchSelected({ title: e.target.value })}
-            placeholder="Título da seção..."
-            className="mt-1 w-full rounded border border-transparent bg-transparent py-1 font-serif text-lg font-semibold text-ink outline-none transition-colors hover:border-paper-rule focus:border-accent focus:bg-paper-raised focus:px-2"
+            placeholder={`Título da ${dLabel.toLowerCase()}...`}
+            className="mt-2 w-full rounded border border-transparent bg-transparent py-1 font-serif text-lg font-semibold text-ink outline-none transition-colors hover:border-paper-rule focus:border-accent focus:bg-paper-raised focus:px-2"
           />
         )}
       </header>
 
-      {/* Formulário de Bloco Estruturado de Questão & Comando */}
+      {/* Bloco de Questão & Comando (quando ativo) */}
       {qb ? (
         <div className="border-b border-paper-rule bg-paper-raised/30 p-4 space-y-3 min-h-0 overflow-y-auto">
           <div className="flex items-center justify-between">
@@ -118,7 +137,7 @@ export function BodyEditor() {
             </button>
           </div>
 
-          {/* Enunciado da Questão */}
+          {/* Enunciado */}
           <div>
             <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
               ❓ Enunciado da Questão
@@ -130,11 +149,11 @@ export function BodyEditor() {
                 patchSelected({ questionBlock: { ...qb, question: e.target.value } })
               }
               placeholder="Digite o enunciado da questão..."
-              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-sm text-ink outline-none focus:border-accent"
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-sm text-ink outline-none focus:border-accent resize-none"
             />
           </div>
 
-          {/* Resposta / Gabarito */}
+          {/* Resposta */}
           <div>
             <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
               💡 Resposta / Gabarito Esperado
@@ -146,88 +165,107 @@ export function BodyEditor() {
                 patchSelected({ questionBlock: { ...qb, answer: e.target.value } })
               }
               placeholder="Digite a resposta correta..."
-              className="w-full rounded border border-paper-rule bg-paper p-2 font-sans text-xs font-semibold text-ink outline-none focus:border-accent"
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-sans text-xs font-semibold text-ink outline-none focus:border-accent resize-none"
             />
           </div>
 
-          {/* Explicação Detalhada */}
+          {/* Explicação */}
           <div>
             <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
               📖 Explicação Detalhada & Fundamentação
             </label>
             <textarea
-              rows={2}
+              rows={3}
               value={qb.explanation}
               onChange={(e) =>
                 patchSelected({ questionBlock: { ...qb, explanation: e.target.value } })
               }
               placeholder="Explique o motivo técnico..."
-              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-xs text-ink outline-none focus:border-accent"
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-xs text-ink outline-none focus:border-accent resize-none"
             />
           </div>
 
-          {/* Exemplo de Comando em Outras Situações */}
+          {/* Exemplo de Comando */}
           <div>
             <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1 flex items-center gap-1">
               <Code className="size-3" />
               💻 Exemplo de Comando & Variações (Outras Situações)
             </label>
             <textarea
-              rows={3}
+              rows={4}
               value={qb.commandExample}
               onChange={(e) =>
                 patchSelected({ questionBlock: { ...qb, commandExample: e.target.value } })
               }
               placeholder="$ ls -la --sort=time # Exemplo de cenário"
-              className="w-full rounded border border-slate-700 bg-slate-900 p-2 font-mono text-xs text-slate-100 outline-none focus:border-accent"
+              className="w-full rounded border border-slate-700 bg-slate-900 p-2 font-mono text-xs text-slate-100 outline-none focus:border-accent resize-none"
             />
           </div>
         </div>
       ) : null}
 
-      {/* Área Principal de Editor de Texto Livre */}
+      {/* Área principal de texto */}
       <div className="relative min-h-0 flex-1 flex flex-col">
         <label className="sr-only" htmlFor="body-editor">
           Texto de {label}
         </label>
-        <textarea
-          id="body-editor"
-          ref={textareaRef}
-          value={loc.node.body}
-          onChange={(e) => patchSelected({ body: e.target.value })}
-          placeholder={`Digite o texto para ${label} aqui...\n\nUse a barra superior para formatar em **negrito**, *itálico* ou <u>sublinhado</u>.`}
-          className="min-h-0 flex-1 resize-none bg-paper px-4 py-4 font-serif text-base leading-relaxed text-ink outline-none whitespace-pre-wrap break-words [word-break:break-word] [overflow-wrap:anywhere] placeholder:italic placeholder:text-ink-muted/50"
-        />
-      </div>
-
-      {/* Rodapé com contagem e ações */}
-      <footer className="flex items-center justify-between border-t border-paper-rule px-4 py-2.5">
-        <span className="font-sans text-xs tabular-nums text-ink-muted">
-          {words} {words === 1 ? "palavra" : "palavras"}
-        </span>
-
-        <div className="flex items-center gap-3">
-          {loc.depth > 0 ? (
+        {depth === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full px-6 py-8 text-center text-ink-muted gap-3">
+            <BookOpen className="size-10 opacity-30" strokeWidth={1} />
+            <p className="font-serif text-base italic">
+              Capítulos não contêm texto direto.
+            </p>
+            <p className="font-sans text-sm max-w-sm">
+              Adicione <strong>seções</strong> abaixo do capítulo para escrever o conteúdo.
+              O capítulo recebe uma página de abertura exclusiva no manuscrito.
+            </p>
             <button
               type="button"
-              onClick={() => addQuestionBlock(loc.node.id)}
-              className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
+              onClick={() => addSubitem(loc.node.id)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 font-sans text-xs font-semibold text-paper shadow hover:bg-accent-hover"
+            >
+              <Plus className="size-3.5" />
+              Adicionar Seção
+            </button>
+          </div>
+        ) : (
+          <textarea
+            id="body-editor"
+            ref={textareaRef}
+            value={loc.node.body}
+            onChange={(e) => patchSelected({ body: e.target.value })}
+            placeholder={`Digite o texto de ${dLabel.toLowerCase()} aqui...\n\nUse a barra superior para **negrito**, *itálico* ou <u>sublinhado</u>.\n\nSepare parágrafos com uma linha em branco.`}
+            className="min-h-0 flex-1 resize-none bg-paper px-5 py-4 font-serif text-[15px] leading-[1.75] text-ink outline-none whitespace-pre-wrap break-words [word-break:break-word] [overflow-wrap:anywhere] placeholder:italic placeholder:text-ink-muted/40"
+          />
+        )}
+      </div>
+
+      {/* Rodapé */}
+      {depth > 0 ? (
+        <footer className="flex items-center justify-between border-t border-paper-rule px-4 py-2.5">
+          <span className="font-sans text-xs tabular-nums text-ink-muted">
+            {words} {words === 1 ? "palavra" : "palavras"}
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleToggleQuestionBlock}
+              className="inline-flex items-center gap-1 text-xs font-medium font-sans text-ink-muted hover:text-accent"
             >
               <HelpCircle className="size-3.5" />
-              + Nova Questão/Comando
+              {qb ? "Questão ativa" : "+ Questão/Comando"}
             </button>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => addSubitem(loc.node.id)}
-            className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
-          >
-            <Plus className="size-3.5" />
-            {loc.depth === 0 ? "Adicionar Seção" : "Adicionar Subitem"}
-          </button>
-        </div>
-      </footer>
+            <button
+              type="button"
+              onClick={() => addSubitem(loc.node.id)}
+              className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
+            >
+              <Plus className="size-3.5" />
+              {depth === 1 ? "Adicionar Subseção" : "Adicionar Sub-subseção"}
+            </button>
+          </div>
+        </footer>
+      ) : null}
     </section>
   );
 }

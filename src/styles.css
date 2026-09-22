@@ -1,30 +1,45 @@
+/* Importação de fontes profissionais */
+@import url("https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap");
+
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #ddd9d0;
-  --color-panel: #1e2124;
-  --color-panel-raised: #282c30;
-  --color-panel-border: #3a3f44;
+  /* ── Canvas & UI Panels ─────────────────────────────────────────── */
+  --color-canvas: #d9d5cc;
+  --color-panel: #1a1d20;
+  --color-panel-raised: #22262a;
+  --color-panel-border: #353a3f;
+  --color-panel-muted: #8a9099;
   --color-panel-fg: #ece8df;
-  --color-panel-muted: #9aa0a6;
-  --color-paper: #fbf7ee;
-  --color-paper-rule: #d8cfb8;
-  --color-ink: #221f1b;
-  --color-ink-muted: #8a8071;
-  --color-accent: #8c2f39;
-  --color-accent-hover: #742530;
   --color-focus: #2f8fb0;
+
+  /* ── Paper & Ink (A4 pages) ─────────────────────────────────────── */
+  --color-paper: #faf6ed;
+  --color-paper-raised: #f2ece0;
+  --color-paper-rule: #d4cbb5;
+  --color-ink: #1e1b17;
+  --color-ink-muted: #7a7265;
+
+  /* ── Accent (Dark Red — estilo editorial clássico) ──────────────── */
+  --color-accent: #8c2f39;
+  --color-accent-hover: #712630;
+
+  /* ── Fontes ──────────────────────────────────────────────────────── */
   --font-serif: "Spectral", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --font-mono: "Fira Code", "Courier New", monospace;
+
+  /* ── Radii ───────────────────────────────────────────────────────── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.625rem;
 }
 
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -49,42 +64,94 @@
   p {
     text-wrap: pretty;
   }
+
+  /* Scrollbar sutil para painéis escuros */
+  .bg-panel *::-webkit-scrollbar,
+  .bg-panel::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .bg-panel *::-webkit-scrollbar-track,
+  .bg-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .bg-panel *::-webkit-scrollbar-thumb,
+  .bg-panel::-webkit-scrollbar-thumb {
+    background: var(--color-panel-border);
+    border-radius: 3px;
+  }
+  .bg-panel *::-webkit-scrollbar-thumb:hover,
+  .bg-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--color-panel-muted);
+  }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────────
+   IMPRESSÃO / EXPORTAÇÃO PDF
+   Otimizado para impressão fiel A4 no Chrome/Edge/Firefox
+────────────────────────────────────────────────────────────────────────────── */
 @media print {
   @page {
-    size: A4;
+    size: A4 portrait;
     margin: 0;
   }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
   #print-root,
   #print-root * {
     visibility: visible;
   }
+
   #print-root {
-    position: absolute;
-    inset: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     background: white;
+    display: block !important;
     gap: 0 !important;
+    padding: 0 !important;
   }
+
+  /* Cada div filho de print-root = uma página A4 */
   #print-root > div {
     width: 210mm !important;
     height: 297mm !important;
     overflow: hidden !important;
     page-break-after: always;
     break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
+
+  /* Remove o scale e sombra das folhas durante impressão */
   #print-root .a4-sheet,
   #print-root > div > div {
     transform: none !important;
     width: 210mm !important;
     height: 297mm !important;
     box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Oculta elementos da UI que não devem ir para o PDF */
+  button[title="Imprimir"],
+  [data-no-print] {
+    display: none !important;
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────────
+   Acessibilidade: respeitar preferência de movimento reduzido
+────────────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

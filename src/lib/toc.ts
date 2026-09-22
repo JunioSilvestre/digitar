@@ -85,9 +85,23 @@ export function chapterLabel(index: number): string {
   return `Capítulo ${toRoman(index)}`;
 }
 
+/**
+ * Gera o label numérico de uma seção/subseção.
+ * path = [cap, sec, subsec, ...]
+ * depth=0 → Capítulo IV
+ * depth=1 → 4.1
+ * depth=2 → 4.1.2
+ * depth≥3 → 4.1.2.1
+ */
 export function sectionLabel(path: number[]): string {
   if (path.length === 1) return chapterLabel(path[0]!);
+  // A partir de depth 1, usa numeração decimal
   return path.join(".");
+}
+
+/** Retorna o depth de um nó a partir de seu path */
+export function pathDepth(path: number[]): number {
+  return path.length - 1;
 }
 
 export type LocatedNode = {
