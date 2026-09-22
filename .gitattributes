@@ -1,0 +1,12 @@
+# Normalize text files to LF in git for cross-platform compatibility (Windows, macOS, Linux)
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

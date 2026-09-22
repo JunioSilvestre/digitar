@@ -1,9 +1,26 @@
+# Dependencies
 node_modules/
-.tanstack/
-.vercel/
+.pnpm-store/
+
+# Build & Dev artifacts
 dist/
 build/
+.tanstack/
+.vercel/
+*.log
+
+# Environment variables
 .env
 .env.local
+.env.*.local
+
+# OS & Editor temp files
 .DS_Store
-*.log
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
