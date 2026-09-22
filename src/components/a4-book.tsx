@@ -86,6 +86,15 @@ function bodyFlow(items: TocNode[]): FlowItem[] {
         title: loc.node.title.trim(),
       });
     }
+
+    if (loc.node.questionBlock) {
+      out.push({
+        kind: "question-block",
+        id: loc.node.id,
+        questionBlock: loc.node.questionBlock,
+      });
+    }
+
     const body = loc.node.body.replace(/\r\n/g, "\n").trim();
     if (body) {
       for (const para of body.split(/\n{2,}/)) {
@@ -151,6 +160,21 @@ function mountMeasurer(host: HTMLDivElement, item: FlowItem): HTMLElement {
       tit.textContent = item.title;
       el.appendChild(tit);
     }
+  } else if (item.kind === "question-block" && item.questionBlock) {
+    el.className = "mt-4 rounded-md border border-paper-rule bg-paper-raised/50 p-3.5 space-y-2 text-ink";
+    const q = document.createElement("div");
+    q.className = "font-serif text-sm font-bold text-accent";
+    q.textContent = `❓ Questão: ${item.questionBlock.question}`;
+    const a = document.createElement("div");
+    a.className = "font-sans text-xs font-semibold text-ink";
+    a.textContent = `💡 Resposta: ${item.questionBlock.answer}`;
+    const exp = document.createElement("div");
+    exp.className = "font-serif text-xs leading-relaxed text-ink-muted";
+    exp.textContent = `📖 Explicação: ${item.questionBlock.explanation}`;
+    const cmd = document.createElement("pre");
+    cmd.className = "font-mono text-[11px] bg-slate-900 text-slate-100 p-2 rounded whitespace-pre-wrap";
+    cmd.textContent = item.questionBlock.commandExample;
+    el.append(q, a, exp, cmd);
   } else {
     el.className = "mt-2.5 whitespace-pre-wrap font-serif text-[15px] leading-[1.6] text-ink break-words [word-break:break-word] [overflow-wrap:anywhere]";
     el.innerHTML = parseFormattedToHtml(item.text ?? "");
@@ -330,6 +354,40 @@ function FlowView({
         {item.title ? (
           <div className="mt-0.5 font-serif text-[16px] font-semibold text-ink break-words [word-break:break-word]">
             {item.title}
+          </div>
+        ) : null}
+      </button>
+    );
+  }
+  if (item.kind === "question-block" && item.questionBlock) {
+    const qb = item.questionBlock;
+    return (
+      <button
+        type="button"
+        onClick={() => item.id && onSelect(item.id)}
+        className={cn(
+          "mt-4 w-full rounded-md border border-paper-rule bg-paper-raised/50 p-3.5 text-left shadow-sm transition-colors hover:border-accent",
+          selectedId === item.id && "ring-2 ring-accent bg-paper-raised",
+        )}
+      >
+        <div className="flex items-center gap-1.5 font-serif text-sm font-bold text-accent">
+          <span>❓</span>
+          <span>Questão: {qb.question}</span>
+        </div>
+        <div className="mt-2 font-sans text-xs font-semibold text-ink">
+          💡 Resposta: {qb.answer}
+        </div>
+        <div className="mt-1.5 font-serif text-xs leading-relaxed text-ink-muted">
+          📖 Explicação: {qb.explanation}
+        </div>
+        {qb.commandExample ? (
+          <div className="mt-2">
+            <span className="font-sans text-[0.68rem] font-bold text-ink-muted uppercase">
+              💻 Exemplo de Comando & Variações:
+            </span>
+            <pre className="mt-1 font-mono text-[11px] leading-snug bg-slate-900 text-slate-100 p-2 rounded whitespace-pre-wrap overflow-x-auto">
+              {qb.commandExample}
+            </pre>
           </div>
         ) : null}
       </button>

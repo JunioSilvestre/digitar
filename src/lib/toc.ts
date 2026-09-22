@@ -1,8 +1,16 @@
+export type QuestionBlock = {
+  question: string;
+  answer: string;
+  explanation: string;
+  commandExample: string;
+};
+
 export type TocNode = {
   id: string;
   title: string;
   page: string;
   body: string;
+  questionBlock?: QuestionBlock;
   children: TocNode[];
 };
 
@@ -34,12 +42,13 @@ export function bumpUidFromTree(nodes: TocNode[]): void {
 }
 
 export function createNode(partial?: Partial<TocNode>): TocNode {
-  const { children, id, title, page, body } = partial ?? {};
+  const { children, id, title, page, body, questionBlock } = partial ?? {};
   return {
     id: id ?? nextId(),
     title: title ?? "",
     page: page ?? "",
     body: body ?? "",
+    questionBlock,
     children: children ?? [],
   };
 }
@@ -143,7 +152,7 @@ export function cloneTree(nodes: TocNode[]): TocNode[] {
 export function updateNode(
   nodes: TocNode[],
   id: string,
-  patch: Partial<Pick<TocNode, "title" | "page" | "body">>,
+  patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>,
 ): TocNode[] {
   return nodes.map((n) => {
     if (n.id === id) return { ...n, ...patch };

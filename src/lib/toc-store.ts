@@ -1,5 +1,11 @@
 import { create } from "zustand";
 import {
+  exportBackupToJson,
+  importBackupFromJson,
+  loadDocFromIndexedDB,
+  saveDocToIndexedDB,
+} from "./indexed-db";
+import {
   SAMPLE_DOC,
   STORAGE_KEY,
   addChild,
@@ -10,12 +16,14 @@ import {
   moveSibling,
   promoteNode,
   removeNode,
+  type QuestionBlock,
   type TocDocument,
   type TocNode,
   updateNode,
 } from "@/lib/toc";
 
 type PreviewMode = "sumario" | "manuscrito";
+type SaveStatus = "saved" | "saving" | "error";
 
 type TocStore = {
   title: string;
@@ -23,37 +31,42 @@ type TocStore = {
   selectedId: string | null;
   previewMode: PreviewMode;
   hydrated: boolean;
+  saveStatus: SaveStatus;
   pageMap: Record<string, number>;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
   setTitle: (title: string) => void;
   select: (id: string | null) => void;
   setPreviewMode: (mode: PreviewMode) => void;
   setPageMap: (pageMap: Record<string, number>) => void;
-  patchSelected: (patch: Partial<Pick<TocNode, "title" | "page" | "body">>) => void;
-  patchNode: (id: string, patch: Partial<Pick<TocNode, "title" | "page" | "body">>) => void;
+  patchSelected: (patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>) => void;
+  patchNode: (id: string, patch: Partial<Pick<TocNode, "title" | "page" | "body" | "questionBlock">>) => void;
   addChapter: () => void;
   addSubitem: (parentId?: string) => void;
+  addQuestionBlock: (parentId?: string) => void;
   remove: (id?: string) => void;
   move: (id: string | undefined, dir: -1 | 1) => void;
   promote: (id?: string) => void;
   demote: (id?: string) => void;
   reset: () => void;
   importDoc: (doc: TocDocument) => void;
+  exportBackup: () => void;
+  importBackupFile: (file: File) => Promise<void>;
 };
 
-function persist(state: { title: string; items: TocNode[]; selectedId: string | null }) {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        title: state.title,
-        items: state.items,
-        selectedId: state.selectedId,
-      }),
-    );
-  } catch {
-    /* ignore quota */
-  }
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function triggerDebouncedPersist(set: any, get: () => TocStore) {
+  set({ saveStatus: "saving" });
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const { title, items, selectedId } = get();
+    try {
+      await saveDocToIndexedDB({ title, items, selectedId });
+      set({ saveStatus: "saved" });
+    } catch {
+      set({ saveStatus: "error" });
+    }
+  }, 600);
 }
 
 function firstId(items: TocNode[]): string | null {
@@ -67,11 +80,29 @@ export const useTocStore = create<TocStore>((set, get) => ({
   selectedId: SAMPLE_DOC.items[0]?.id ?? null,
   previewMode: "manuscrito",
   hydrated: false,
+  saveStatus: "saved",
   pageMap: {},
 
-  hydrate: () => {
+  hydrate: async () => {
     if (get().hydrated) return;
     try {
+      const dbDoc = await loadDocFromIndexedDB();
+      if (dbDoc && Array.isArray(dbDoc.items) && dbDoc.items.length > 0) {
+        bumpUidFromTree(dbDoc.items);
+        const selected =
+          dbDoc.selectedId && findLocated(dbDoc.items, dbDoc.selectedId)
+            ? dbDoc.selectedId
+            : firstId(dbDoc.items);
+        set({
+          title: typeof dbDoc.title === "string" ? dbDoc.title : SAMPLE_DOC.title,
+          items: dbDoc.items,
+          selectedId: selected,
+          hydrated: true,
+          saveStatus: "saved",
+        });
+        return;
+      }
+      // Fallback para localStorage
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<TocDocument> & { selectedId?: string | null };
@@ -86,6 +117,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
             items: parsed.items,
             selectedId: selected,
             hydrated: true,
+            saveStatus: "saved",
           });
           return;
         }
@@ -99,18 +131,19 @@ export const useTocStore = create<TocStore>((set, get) => ({
       items: SAMPLE_DOC.items,
       selectedId: SAMPLE_DOC.items[0]?.id ?? null,
       hydrated: true,
+      saveStatus: "saved",
     });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   setTitle: (title) => {
     set({ title });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   select: (id) => {
     set({ selectedId: id });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   setPreviewMode: (previewMode) => set({ previewMode }),
@@ -124,7 +157,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
     const cleanPatch = loc && loc.depth === 0 ? { ...patch, title: "" } : patch;
     const next = updateNode(items, selectedId, cleanPatch);
     set({ items: next });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   patchNode: (id, patch) => {
@@ -133,7 +166,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
     const cleanPatch = loc && loc.depth === 0 ? { ...patch, title: "" } : patch;
     const next = updateNode(items, id, cleanPatch);
     set({ items: next });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   addChapter: () => {
@@ -142,7 +175,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
     chapterNode.children.push(sectionNode);
     const items = addChild(get().items, null, chapterNode);
     set({ items, selectedId: sectionNode.id });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   addSubitem: (parentId) => {
@@ -150,7 +183,6 @@ export const useTocStore = create<TocStore>((set, get) => ({
     const parent = parentId ?? currentSelected;
     let targetParent = parent;
 
-    // Se o selecionado for uma seção (depth > 0), adiciona ao mesmo capítulo pai!
     if (targetParent) {
       const loc = findLocated(get().items, targetParent);
       if (loc && loc.depth > 0 && loc.parent) {
@@ -158,7 +190,6 @@ export const useTocStore = create<TocStore>((set, get) => ({
       }
     }
 
-    // Se não houver nenhum capítulo existente, cria um capítulo primeiro
     if (!targetParent && get().items.length === 0) {
       get().addChapter();
       return;
@@ -168,7 +199,40 @@ export const useTocStore = create<TocStore>((set, get) => ({
     const node = createNode({ title: "", body: "" });
     const items = addChild(get().items, actualParent, node);
     set({ items, selectedId: node.id });
-    persist(get());
+    triggerDebouncedPersist(set, get);
+  },
+
+  addQuestionBlock: (parentId) => {
+    const currentSelected = get().selectedId;
+    const parent = parentId ?? currentSelected;
+    let targetParent = parent;
+
+    if (targetParent) {
+      const loc = findLocated(get().items, targetParent);
+      if (loc && loc.depth > 0 && loc.parent) {
+        targetParent = loc.parent.id;
+      }
+    }
+
+    if (!targetParent && get().items.length === 0) {
+      get().addChapter();
+    }
+
+    const actualParent = targetParent ?? (get().items[0]?.id ?? null);
+    const defaultQuestion: QuestionBlock = {
+      question: "Digite o enunciado da questão ou comando aqui...",
+      answer: "Digite a resposta ou comando esperado...",
+      explanation: "Explique a fundamentação ou conceito técnico aqui...",
+      commandExample: "$ ls -la --sort=time\n# Exemplo em outra situação / cenário",
+    };
+    const node = createNode({
+      title: "Questão & Comando",
+      body: "",
+      questionBlock: defaultQuestion,
+    });
+    const items = addChild(get().items, actualParent, node);
+    set({ items, selectedId: node.id });
+    triggerDebouncedPersist(set, get);
   },
 
   remove: (id) => {
@@ -177,28 +241,28 @@ export const useTocStore = create<TocStore>((set, get) => ({
     const items = removeNode(get().items, targetId);
     const selectedId = get().selectedId === targetId ? firstId(items) : get().selectedId;
     set({ items, selectedId });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   move: (id, dir) => {
     const targetId = id ?? get().selectedId;
     if (!targetId) return;
     set({ items: moveSibling(get().items, targetId, dir) });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   promote: (id) => {
     const targetId = id ?? get().selectedId;
     if (!targetId) return;
     set({ items: promoteNode(get().items, targetId) });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   demote: (id) => {
     const targetId = id ?? get().selectedId;
     if (!targetId) return;
     set({ items: demoteNode(get().items, targetId) });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   reset: () => {
@@ -208,7 +272,7 @@ export const useTocStore = create<TocStore>((set, get) => ({
       items: SAMPLE_DOC.items,
       selectedId: SAMPLE_DOC.items[0]?.id ?? null,
     });
-    persist(get());
+    triggerDebouncedPersist(set, get);
   },
 
   importDoc: (doc) => {
@@ -218,6 +282,20 @@ export const useTocStore = create<TocStore>((set, get) => ({
       items: doc.items,
       selectedId: firstId(doc.items),
     });
-    persist(get());
+    triggerDebouncedPersist(set, get);
+  },
+
+  exportBackup: () => {
+    const { title, items } = get();
+    exportBackupToJson({ title, items });
+  },
+
+  importBackupFile: async (file) => {
+    try {
+      const doc = await importBackupFromJson(file);
+      get().importDoc(doc);
+    } catch (err) {
+      alert("Erro ao importar o arquivo de backup. Verifique se o arquivo JSON é válido.");
+    }
   },
 }));

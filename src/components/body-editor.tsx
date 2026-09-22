@@ -1,13 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  Bold,
-  BookOpen,
-  Heading,
-  Italic,
-  List,
-  Plus,
-  Underline,
-} from "lucide-react";
+import { BookOpen, Code, HelpCircle, Plus, Trash2 } from "lucide-react";
 import { chapterLabel, countWords, findLocated, sectionLabel } from "@/lib/toc";
 import { useTocStore } from "@/lib/toc-store";
 
@@ -17,6 +9,7 @@ export function BodyEditor() {
   const select = useTocStore((s) => s.select);
   const patchSelected = useTocStore((s) => s.patchSelected);
   const addSubitem = useTocStore((s) => s.addSubitem);
+  const addQuestionBlock = useTocStore((s) => s.addQuestionBlock);
   const pageMap = useTocStore((s) => s.pageMap);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,25 +20,6 @@ export function BodyEditor() {
       select(items[0]!.id);
     }
   }, [selectedId, items, select]);
-
-  const applyFormat = (prefix: string, suffix: string = prefix) => {
-    const el = textareaRef.current;
-    if (!el || !loc) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const currentText = loc.node.body;
-    const selected = currentText.substring(start, end);
-    const replacement = `${prefix}${selected || "texto"}${suffix}`;
-    const nextText = currentText.substring(0, start) + replacement + currentText.substring(end);
-
-    patchSelected({ body: nextText });
-
-    setTimeout(() => {
-      el.focus();
-      const selLen = selected.length || 5;
-      el.setSelectionRange(start + prefix.length, start + prefix.length + selLen);
-    }, 10);
-  };
 
   if (!loc) {
     return (
@@ -62,6 +36,22 @@ export function BodyEditor() {
   const label = loc.depth === 0 ? chapterLabel(loc.path[0]!) : sectionLabel(loc.path);
   const page = pageMap[loc.node.id];
   const words = countWords(loc.node.body);
+  const qb = loc.node.questionBlock;
+
+  const handleToggleQuestionBlock = () => {
+    if (qb) {
+      patchSelected({ questionBlock: undefined });
+    } else {
+      patchSelected({
+        questionBlock: {
+          question: "Digite o enunciado da questão ou comando aqui...",
+          answer: "Digite a resposta ou comando esperado...",
+          explanation: "Explique a fundamentação ou conceito técnico aqui...",
+          commandExample: "$ ls -la --sort=time\n# Exemplo em outra situação / cenário",
+        },
+      });
+    }
+  };
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-paper">
@@ -71,11 +61,24 @@ export function BodyEditor() {
           <p className="font-sans text-[0.7rem] font-bold tracking-widest text-accent uppercase">
             {label}
           </p>
-          {page ? (
-            <span className="rounded bg-paper-rule/40 px-2 py-0.5 font-sans text-xs tabular-nums text-ink-muted">
-              Página {page}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {page ? (
+              <span className="rounded bg-paper-rule/40 px-2 py-0.5 font-sans text-xs tabular-nums text-ink-muted">
+                Página {page}
+              </span>
+            ) : null}
+            {loc.depth > 0 ? (
+              <button
+                type="button"
+                onClick={handleToggleQuestionBlock}
+                className="inline-flex items-center gap-1 rounded border border-paper-rule bg-paper-raised/60 px-2 py-0.5 font-sans text-xs font-medium text-ink hover:border-accent hover:text-accent"
+                title={qb ? "Remover Bloco de Questão" : "Converter em Bloco de Questão & Comando"}
+              >
+                <HelpCircle className="size-3" />
+                {qb ? "Remover Questão" : "+ Bloco Questão/Comando"}
+              </button>
+            ) : null}
+          </div>
         </div>
         {loc.depth === 0 ? (
           <div className="mt-1 flex items-center justify-between rounded bg-paper-raised/60 px-3 py-1.5 border border-paper-rule/60">
@@ -97,7 +100,92 @@ export function BodyEditor() {
         )}
       </header>
 
-      {/* Área Principal de Editor de Texto */}
+      {/* Formulário de Bloco Estruturado de Questão & Comando */}
+      {qb ? (
+        <div className="border-b border-paper-rule bg-paper-raised/30 p-4 space-y-3 min-h-0 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <span className="font-sans text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1">
+              <HelpCircle className="size-3.5" />
+              Estrutura da Questão / Comando Técnico
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleQuestionBlock}
+              className="text-ink-muted hover:text-red-500"
+              title="Excluir Bloco de Questão"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </div>
+
+          {/* Enunciado da Questão */}
+          <div>
+            <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
+              ❓ Enunciado da Questão
+            </label>
+            <textarea
+              rows={2}
+              value={qb.question}
+              onChange={(e) =>
+                patchSelected({ questionBlock: { ...qb, question: e.target.value } })
+              }
+              placeholder="Digite o enunciado da questão..."
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-sm text-ink outline-none focus:border-accent"
+            />
+          </div>
+
+          {/* Resposta / Gabarito */}
+          <div>
+            <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
+              💡 Resposta / Gabarito Esperado
+            </label>
+            <textarea
+              rows={2}
+              value={qb.answer}
+              onChange={(e) =>
+                patchSelected({ questionBlock: { ...qb, answer: e.target.value } })
+              }
+              placeholder="Digite a resposta correta..."
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-sans text-xs font-semibold text-ink outline-none focus:border-accent"
+            />
+          </div>
+
+          {/* Explicação Detalhada */}
+          <div>
+            <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1">
+              📖 Explicação Detalhada & Fundamentação
+            </label>
+            <textarea
+              rows={2}
+              value={qb.explanation}
+              onChange={(e) =>
+                patchSelected({ questionBlock: { ...qb, explanation: e.target.value } })
+              }
+              placeholder="Explique o motivo técnico..."
+              className="w-full rounded border border-paper-rule bg-paper p-2 font-serif text-xs text-ink outline-none focus:border-accent"
+            />
+          </div>
+
+          {/* Exemplo de Comando em Outras Situações */}
+          <div>
+            <label className="block font-sans text-[0.72rem] font-semibold text-ink-muted mb-1 flex items-center gap-1">
+              <Code className="size-3" />
+              💻 Exemplo de Comando & Variações (Outras Situações)
+            </label>
+            <textarea
+              rows={3}
+              value={qb.commandExample}
+              onChange={(e) =>
+                patchSelected({ questionBlock: { ...qb, commandExample: e.target.value } })
+              }
+              placeholder="$ ls -la --sort=time # Exemplo de cenário"
+              className="w-full rounded border border-slate-700 bg-slate-900 p-2 font-mono text-xs text-slate-100 outline-none focus:border-accent"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {/* Área Principal de Editor de Texto Livre */}
       <div className="relative min-h-0 flex-1 flex flex-col">
         <label className="sr-only" htmlFor="body-editor">
           Texto de {label}
@@ -118,14 +206,27 @@ export function BodyEditor() {
           {words} {words === 1 ? "palavra" : "palavras"}
         </span>
 
-        <button
-          type="button"
-          onClick={() => addSubitem(loc.node.id)}
-          className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
-        >
-          <Plus className="size-3.5" />
-          {loc.depth === 0 ? "Adicionar Seção" : "Adicionar Subitem"}
-        </button>
+        <div className="flex items-center gap-3">
+          {loc.depth > 0 ? (
+            <button
+              type="button"
+              onClick={() => addQuestionBlock(loc.node.id)}
+              className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
+            >
+              <HelpCircle className="size-3.5" />
+              + Nova Questão/Comando
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => addSubitem(loc.node.id)}
+            className="inline-flex items-center gap-1 text-xs font-medium font-sans text-accent hover:text-accent-hover"
+          >
+            <Plus className="size-3.5" />
+            {loc.depth === 0 ? "Adicionar Seção" : "Adicionar Subitem"}
+          </button>
+        </div>
       </footer>
     </section>
   );

@@ -7,6 +7,8 @@ export const A4_FOLIO_PX = 22;
 export const A4_CONTENT_W_PX = A4_W_PX - A4_MARGIN_PX * 2;
 export const A4_CONTENT_H_PX = A4_H_PX - A4_MARGIN_PX * 2 - A4_FOLIO_PX;
 
+import type { QuestionBlock } from "./toc";
+
 export type FlowKind =
   | "toc-title"
   | "toc-kicker"
@@ -14,7 +16,8 @@ export type FlowKind =
   | "break"
   | "chapter"
   | "section"
-  | "para";
+  | "para"
+  | "question-block";
 
 export type FlowItem = {
   kind: FlowKind;
@@ -24,6 +27,7 @@ export type FlowItem = {
   depth?: number;
   text?: string;
   page?: number;
+  questionBlock?: QuestionBlock;
 };
 
 export type LaidPage = {

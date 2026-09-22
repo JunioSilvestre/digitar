@@ -194,6 +194,7 @@ export function OutlinePanel() {
   const setTitle = useTocStore((s) => s.setTitle);
   const addChapter = useTocStore((s) => s.addChapter);
   const reset = useTocStore((s) => s.reset);
+  const addQuestionBlock = useTocStore((s) => s.addQuestionBlock);
 
   return (
     <aside className="flex h-full min-h-0 flex-col bg-panel text-panel-fg">
@@ -216,14 +217,21 @@ export function OutlinePanel() {
           />
         </label>
       </header>
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="font-sans text-[0.72rem] text-panel-muted">Capítulos</span>
+      <div className="flex items-center justify-between gap-1 px-4 py-3">
         <button
           type="button"
           onClick={addChapter}
-          className="rounded-md bg-accent px-3 py-2 font-sans text-xs font-medium text-paper hover:bg-accent-hover"
+          className="rounded bg-accent px-2.5 py-1.5 font-sans text-xs font-semibold text-paper shadow hover:bg-accent-hover"
         >
           + Capítulo
+        </button>
+        <button
+          type="button"
+          onClick={() => addQuestionBlock()}
+          className="rounded border border-panel-border bg-panel-raised px-2.5 py-1.5 font-sans text-xs font-medium text-panel-fg hover:border-accent hover:text-accent"
+          title="Adicionar Questão / Comando Técnico"
+        >
+          + Questão
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
