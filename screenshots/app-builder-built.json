@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Sumário",
+      "hasCanvas": false,
+      "bodyTextLen": 1871,
+      "bodyTextHash": "bced9255983202737656a7570634b10cce6b4deb84c8827219a2885f641bba5d",
+      "bodyTextPrefix": "ÍNDICE Sumário Título da obra Capítulos + Capítulo CAPÍTULO I In",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Sumário",
+      "hasCanvas": false,
+      "bodyTextLen": 156,
+      "bodyTextHash": "78baf459476eee78105191d5562bbe73ecced9db3880fd32074f9e3cd3dd8dd1",
+      "bodyTextPrefix": "TEXTO ASSOCIADO A CAPÍTULO I Introdução página 1 Texto do Capítu",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
