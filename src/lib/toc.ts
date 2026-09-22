@@ -38,6 +38,7 @@ export type TocNode = {
 export type TocDocument = {
   title: string;
   items: TocNode[];
+  selectedId?: string | null;
 };
 
 export const STORAGE_KEY = "sumario-doc-v4";

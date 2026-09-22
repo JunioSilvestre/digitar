@@ -1,10 +1,6 @@
 import { create } from "zustand";
-import {
-  exportBackupToJson,
-  importBackupFromJson,
-  loadDocFromIndexedDB,
-  saveDocToIndexedDB,
-} from "./indexed-db";
+import { loadDocument, saveDocument } from "./documents";
+import { exportBackupToJson, importBackupFromJson } from "./indexed-db";
 import {
   SAMPLE_DOC,
   STORAGE_KEY,
@@ -67,7 +63,7 @@ function triggerDebouncedPersist(set: any, get: () => TocStore) {
   saveTimer = setTimeout(async () => {
     const { title, items, selectedId } = get();
     try {
-      await saveDocToIndexedDB({ title, items, selectedId });
+      await saveDocument({ data: { title, items, selectedId } });
       set({ saveStatus: "saved" });
     } catch {
       set({ saveStatus: "error" });
@@ -81,9 +77,9 @@ function firstId(items: TocNode[]): string | null {
 }
 
 export const useTocStore = create<TocStore>((set, get) => ({
-  title: SAMPLE_DOC.title,
-  items: SAMPLE_DOC.items,
-  selectedId: SAMPLE_DOC.items[0]?.id ?? null,
+  title: "Untitled",
+  items: [],
+  selectedId: null,
   previewMode: "manuscrito",
   hydrated: false,
   saveStatus: "saved",
@@ -92,44 +88,24 @@ export const useTocStore = create<TocStore>((set, get) => ({
   hydrate: async () => {
     if (get().hydrated) return;
     try {
-      const dbDoc = await loadDocFromIndexedDB();
-      if (dbDoc && Array.isArray(dbDoc.items) && dbDoc.items.length > 0) {
-        bumpUidFromTree(dbDoc.items);
+      const doc = await loadDocument();
+      if (doc && Array.isArray(doc.items) && doc.items.length > 0) {
+        bumpUidFromTree(doc.items);
         const selected =
-          dbDoc.selectedId && findLocated(dbDoc.items, dbDoc.selectedId)
-            ? dbDoc.selectedId
-            : firstId(dbDoc.items);
+          doc.selectedId && findLocated(doc.items, doc.selectedId)
+            ? doc.selectedId
+            : firstId(doc.items);
         set({
-          title: typeof dbDoc.title === "string" ? dbDoc.title : SAMPLE_DOC.title,
-          items: dbDoc.items,
+          title: doc.title || SAMPLE_DOC.title,
+          items: doc.items,
           selectedId: selected,
           hydrated: true,
           saveStatus: "saved",
         });
         return;
       }
-      // Fallback para localStorage
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<TocDocument> & { selectedId?: string | null };
-        if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
-          bumpUidFromTree(parsed.items);
-          const selected =
-            parsed.selectedId && findLocated(parsed.items, parsed.selectedId)
-              ? parsed.selectedId
-              : firstId(parsed.items);
-          set({
-            title: typeof parsed.title === "string" ? parsed.title : SAMPLE_DOC.title,
-            items: parsed.items,
-            selectedId: selected,
-            hydrated: true,
-            saveStatus: "saved",
-          });
-          return;
-        }
-      }
     } catch {
-      /* keep sample */
+      /* ignore */
     }
     bumpUidFromTree(SAMPLE_DOC.items);
     set({

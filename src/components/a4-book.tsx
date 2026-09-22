@@ -475,6 +475,13 @@ function FlowView({
   // ── TOC Row ────────────────────────────────────────────────────────────────
   if (item.kind === "toc-row") {
     const depth = item.depth ?? 0;
+    
+    // Limita o título a 30 caracteres para não quebrar a linha e manter os pontos
+    let displayTitle = item.title || "—";
+    if (displayTitle.length > 30) {
+      displayTitle = displayTitle.slice(0, 30) + "...";
+    }
+
     return (
       <button
         type="button"
@@ -497,18 +504,21 @@ function FlowView({
         >
           {item.label}
         </span>
-        <span
-          className={cn(
-            "min-w-0 truncate font-serif",
-            depth === 0
-              ? "text-[12px] font-semibold text-ink"
-              : depth === 1
+        
+        {/* Na frente do Capítulo (depth 0), não mostramos o título no sumário, apenas "Capítulo I" */}
+        {depth > 0 && (
+          <span
+            className={cn(
+              "min-w-0 font-serif whitespace-nowrap",
+              depth === 1
                 ? "text-[11px] font-normal text-ink"
                 : "text-[10px] font-normal text-ink-muted",
-          )}
-        >
-          {item.title || "—"}
-        </span>
+            )}
+          >
+            {displayTitle}
+          </span>
+        )}
+
         <span className="relative top-[-3px] min-w-[8px] flex-1 border-b border-dotted border-paper-rule" />
         <span className="min-w-6 shrink-0 text-right font-sans text-[11px] tabular-nums text-ink">
           {item.page ?? "—"}
