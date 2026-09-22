@@ -462,9 +462,10 @@ export function BodyEditor({
         ) : (
           <input
             type="text"
+            maxLength={30}
             value={loc.node.title}
             onChange={(e) => patchSelected({ title: e.target.value })}
-            placeholder={`Título da ${dLabel.toLowerCase()}...`}
+            placeholder={`Título da ${dLabel.toLowerCase()} (máx. 30 caracteres)...`}
             className="mt-2 w-full rounded border border-transparent bg-transparent py-1 font-serif text-lg font-semibold text-ink outline-none transition-colors hover:border-paper-rule focus:border-accent focus:bg-paper-raised focus:px-2"
             spellCheck
           />

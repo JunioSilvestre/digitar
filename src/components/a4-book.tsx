@@ -509,7 +509,7 @@ function FlowView({
         {depth > 0 && (
           <span
             className={cn(
-              "min-w-0 font-serif whitespace-nowrap",
+              "min-w-0 truncate font-serif",
               depth === 1
                 ? "text-[11px] font-normal text-ink"
                 : "text-[10px] font-normal text-ink-muted",
